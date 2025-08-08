@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>國小學生行為觀察與建議（可匯出 PDF / ODT）</title>
+
+<!-- CSS（簡單美化） -->
+<style>
+  :root{--bg:#f6f8fa;--card:#fff;--accent:#2b7cff;--muted:#666;}
+  body{font-family:"Microsoft JhengHei",system-ui,Arial; margin:0; padding:18px; background:var(--bg); color:#222;}
+  .wrap{max-width:980px;margin:0 auto;}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  header h1{font-size:20px;margin:0;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;}
+  button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:14px;}
+  button.secondary{background:#4a4a4a;}
+  .panel{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.06);margin-bottom:12px;}
+  details{margin-bottom:8px;}
+  summary{font-weight:700;font-size:16px;cursor:pointer;}
+  label.item{display:block;padding:6px 4px;border-radius:6px;margin:4px 0;cursor:pointer;}
+  label.item:hover{background:#f0f6ff;}
+  .result{display:none;padding:12px;margin-top:12px;background:#fffdf4;border-left:6px solid #ffb547;border-radius:6px;}
+  .result h3{margin:10px 0 6px;}
+  .meta{font-size:13px;color:var(--muted);}
+  .topbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  @media (max-width:600px){header h1{font-size:18px}}
+</style>
+
+<!-- 外部 lib：jsPDF, html2canvas, JSZip -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>國小學生行為觀察與建議（含 PDF / ODT 匯出）</h1>
+      <div class="meta">請勾選觀察到的行為，按「產生建議」查看與匯出報告。</div>
+    </header>
+
+    <div class="controls">
+      <input id="studentName" type="text" placeholder="學生姓名（選填）" style="padding:8px;border-radius:6px;border:1px solid #ddd;min-width:200px" />
+      <input id="observer" type="text" placeholder="填表人（老師/家長）" style="padding:8px;border-radius:6px;border:1px solid #ddd;min-width:200px" />
+      <button id="generateBtn">產生建議</button>
+      <button id="downloadPdfBtn" class="secondary">匯出 PDF</button>
+      <button id="downloadOdtBtn" class="secondary">匯出 ODT</button>
+    </div>
+
+    <!-- 行為清單（摺疊） -->
+    <form id="behaviorForm" class="panel" onsubmit="return false;">
+      <!-- 動態由 JS 產生內容 -->
+      <div id="listContainer"></div>
+    </form>
+
+    <!-- 顯示結果（可被匯出） -->
+    <div id="reportArea" class="panel" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div id="reportTitle" style="font-weight:700;font-size:18px"></div>
+          <div id="reportMeta" class="meta" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #eee" />
+
+      <div id="selectedList"></div>
+
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;">
+        <div style="flex:1;min-width:260px;">
+          <h3>家長照護建議</h3>
+          <div id="parentAdvice"></div>
+        </div>
+        <div style="flex:1;min-width:260px;">
+          <h3>教師教學輔導建議</h3>
+          <div id="teacherAdvice"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:13px;color:#666;margin-top:6px">
+      提示：建議可做為參考，若有嚴重或持續性問題，請尋求專業評估（學校輔導、學校心理師或醫療專業）。
+    </div>
+  </div>
+
+<script>
+/* ----- 資料：8 類 × 每類 5 個具體描述（含家長 & 教師建議） ----- */
+const data = {
+  "注意力與專注力": [
+    {desc:"上課時經常東張西望，難以持續注視老師或黑板超過兩分鐘", parent:"在家安排短時間專注練習（如10–15分鐘），並提供正向回饋；減少環境干擾。", teacher:"採用分段式教學（把內容拆短）、使用視覺提示與檢查表，並安排靠前座位。"},
+    {desc:"做作業常半途而廢，需要多次提醒才完成", parent:"將作業拆成小任務並設定短時段與休息點，陪伴或定時提醒。", teacher:"給予分段回饋與階段性檢查，並設置完成獎勵機制。"},
+    {desc:"易受周遭聲響或同學動作干擾而分心", parent:"提供安靜做功課空間，使用耳塞或背景白噪音（視情況）。", teacher:"安排學生座位遠離窗邊或門口，減少刺激來源。"},
+    {desc:"聽指令時無法一次記住，需要反覆問或忘記步驟", parent:"給予簡短清楚的口頭或書面步驟，並請孩子重述確認。", teacher:"搭配板書、流程圖或示範，並拆解指令成小步驟。"},
+    {desc:"完成作業或任務常遺漏步驟或細節", parent:"與孩子一起列檢查清單，完成後逐項核對。", teacher:"提供檢核表或範例，並教導檢查步驟。"}
+  ],
+  "情緒表達與調節": [
+    {desc:"遇到挫折（如答錯題）立刻哭泣或突然暴怒", parent:"引導孩子命名情緒（如生氣、難過），教簡單情緒調節技巧（深呼吸、數到五）。", teacher:"建立情緒角或冷靜區，示範情緒處理步驟並給予情緒詞彙訓練。"},
+    {desc:"在遊戲或比賽中輸了會過度激動或破壞東西", parent:"在家練習遊戲規則與輸贏處理，強化運動家精神與道歉行為。", teacher:"事前說明比賽規則並演練輸贏處理，設計反省時間。"},
+    {desc:"情緒波動大，一天內多次從開心轉為憤怒", parent:"協助記錄情緒起伏與可能誘因，建立情緒日誌。", teacher:"觀察觸發因素並在課堂中提供穩定支持，必要時與家長協作。"},
+    {desc:"不願或拒絕向同儕道歉，即使自己有錯", parent:"在家用情境演練道歉語句與換位思考練習。", teacher:"進行角色扮演，並在班級建立和解流程。"},
+    {desc:"遇到不順利即拒絕參與後續活動或退縮", parent:"以小步驟鼓勵再次嘗試並給予適度獎勵以建立信心。", teacher:"將任務拆小，給予及時正向回饋，並調整難度。"}
+  ],
+  "同儕互動": [
+    {desc:"在團體活動中經常與同學發生口角或爭執", parent:"教導傾聽與表達需求的技巧，並練習冷靜溝通。", teacher:"設計合作任務並教導衝突處理步驟，如輪流、協商。"},
+    {desc:"常指揮或控制同伴，不接受他人意見", parent:"引導尊重他人想法，做團隊合作的小遊戲練習。", teacher:"分配角色與責任，提供正向行為反饋。"},
+    {desc:"喜歡與固定小圈子同學互動，排斥他人加入", parent:"鼓勵參與不同群體活動，安排親子混齡互動機會。", teacher:"輪替組別與任務設計，讓學生與不同同學合作。"},
+    {desc:"遊戲規則不合意就立即離場或生氣", parent:"訓練協商與妥協技巧，事先討論遊戲規則。", teacher:"讓學生參與規則制定並練習接受多數決。"},
+    {desc:"對同儕開玩笑過頭造成對方不悅或傷害", parent:"討論幽默邊界與同理心，示範適當玩笑。", teacher:"透過同理心活動與班會討論界線。"}
+  ],
+  "學習態度與動機": [
+    {desc:"對課堂新知缺乏興趣，少主動發言或參與", parent:"連結孩子興趣與學習內容，找出引發好奇的小切入點。", teacher:"採用情境式或問題導向活動，提升投入感。"},
+    {desc:"作業經常拖延到最後一刻才匆忙完成", parent:"協助建立時間表與階段性提醒（前一天檢查）。", teacher:"設定分段繳交與中期檢核，並給予回饋。"},
+    {desc:"完成任務只求及格，不願修改或再嘗試", parent:"引導欣賞努力過程並示範修正的價值（成長型思維）。", teacher:"給予修正空間與成功經驗，強化過程獎勵。"},
+    {desc:"上課走神、對老師提問反應遲緩", parent:"確保充足睡眠與飲食，並建立上課前的準備例行。", teacher:"使用隨機點名、互動小組或短小活動來喚醒注意。"},
+    {desc:"遇到挑戰性作業容易放棄不再嘗試", parent:"分解任務，鼓勵嘗試並讚賞努力。", teacher:"將作業分級、循序漸進並提供差異化支援。"}
+  ],
+  "語言與溝通": [
+    {desc:"說話音量常不適場合（過大或過小）", parent:"在家練習不同情境的音量示範與回饋。", teacher:"提醒並示範適切音量，安排小組練習。"},
+    {desc:"回應常答非所問或離題", parent:"教導先聽完問題再回答，練習簡短回應。", teacher:"確認學生是否理解問題，有需要時重述與引導。"},
+    {desc:"敘述故事時時間順序混亂、缺乏連貫性", parent:"用圖卡幫助孩子排序事件並重組故事。", teacher:"指導故事結構與使用提示問題引導敘述。"},
+    {desc:"與同儕交談使用命令或不禮貌語氣", parent:"示範禮貌用語與尊重表達，家庭中持續提醒。", teacher:"透過角色扮演練習替代句型與尊重語句。"},
+    {desc:"經常打斷他人談話，不等待對方說完", parent:"練習輪流說話與掌握肢體訊號（如舉手）。", teacher:"班級建立發言規範並練習輪流發言。"}
+  ],
+  "動作與協調性": [
+    {desc:"跑步或遊戲時容易跌倒或與人相撞", parent:"在家進行基礎平衡與協調訓練（簡單遊戲）。", teacher:"在體育活動中安排分級動作練習並保護性教學。"},
+    {desc:"使用剪刀或寫字時手部動作僵硬不靈活", parent:"多練習剪紙、黏土與手工活動增進精細動作。", teacher:"課堂融入精細動作練習並給予個別指導。"},
+    {desc:"體育課中難以跟上節奏或隊形", parent:"加強基本體能與節奏感練習（親子活動）。", teacher:"提供簡化步驟與逐步示範。"},
+    {desc:"書寫字體歪斜、握筆姿勢不正或速度慢", parent:"練習正確握筆與每日少量練習。", teacher:"提供字帖、握筆教學與逐步回饋。"},
+    {desc:"拋接球頻繁失誤、無法穩定接球", parent:"親子一起做拋接遊戲，從大球慢慢過渡小球。", teacher:"從簡單到困難分層練習並個別輔導。"}
+  ],
+  "自理能力": [
+    {desc:"無法獨立整理書包、文具或防疫用品常遺漏", parent:"訂立出門前檢查清單並每天檢查習慣化。", teacher:"上課前留5分鐘整理時間並核對必備物品。"},
+    {desc:"上課常忘記帶教材或作業", parent:"前一天晚上檢查隔日用品並放在固定位置。", teacher:"使用週表提醒與同儕互相檢查制度。"},
+    {desc:"用餐時常灑落或不會恰當使用餐具", parent:"練習正確用餐姿勢與餐具使用。", teacher:"以課堂示範與獎勵結合餐桌禮儀。"},
+    {desc:"無法依時間表準時完成日常任務", parent:"製作視覺化時間表並用計時器協助。", teacher:"以倒數計時與階段提醒幫助時間管理。"},
+    {desc:"廁所後常忘記洗手或整理衣物", parent:"在家反覆示範並在廁所張貼檢核步驟。", teacher:"建立如廁後檢核表並班級互助檢查。"}
+  ],
+  "規範遵守": [
+    {desc:"上課時頻繁離開座位或走動打擾他人", parent:"與孩子訂立上課規範並在家模擬練習。", teacher:"設定座位規範及適當離位流程與獎懲。"},
+    {desc:"在課堂使用非學習物品（玩具、手機）多次被提醒仍繼續", parent:"上課前收起個人物品並說明使用時機。", teacher:"課堂前檢查並設置保管箱或規範。"},
+    {desc:"未經允許隨意進出教室或到教職員空間", parent:"教導教室邊界與尊重公共空間的規範。", teacher:"明確進出流程並告知後果。"},
+    {desc:"對老師要求拒絕或頂嘴，態度不尊重", parent:"示範尊重回應方式並在家庭中練習。", teacher:"冷靜溝通、重申規範並給予適當處置。"},
+    {desc:"考試中偷看或不誠實行為", parent:"教導誠信價值並討論後果。", teacher:"加強考場管理、座位安排與誠信教育。"}
+  ]
+};
+
+/* ----- 建構 UI 列表 ----- */
+const listContainer = document.getElementById('listContainer');
+let idCounter = 0;
+for (const category in data) {
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  summary.textContent = category;
+  details.appendChild(summary);
+  data[category].forEach((item, i) => {
+    const id = `cb_${idCounter++}`;
+    const label = document.createElement('label');
+    label.className = 'item';
+    label.htmlFor = id;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = id;
+    cb.name = 'behavior';
+    cb.dataset.cat = category;
+    cb.dataset.idx = i;
+    cb.style.marginRight = '8px';
+    label.appendChild(cb);
+    const desc = document.createElement('span');
+    desc.textContent = item.desc;
+    label.appendChild(desc);
+    details.appendChild(label);
+  });
+  listContainer.appendChild(details);
+}
+
+/* ----- 產生建議 & 顯示報告 ----- */
+const generateBtn = document.getElementById('generateBtn');
+const reportArea = document.getElementById('reportArea');
+const selectedList = document.getElementById('selectedList');
+const parentAdvice = document.getElementById('parentAdvice');
+const teacherAdvice = document.getElementById('teacherAdvice');
+const reportTitle = document.getElementById('reportTitle');
+const reportMeta = document.getElementById('reportMeta');
+
+function gatherSelections() {
+  const checked = Array.from(document.querySelectorAll('input[name="behavior"]:checked'));
+  return checked.map(cb => {
+    return {cat: cb.dataset.cat, idx: Number(cb.dataset.idx), desc: data[cb.dataset.cat][cb.dataset.idx].desc,
+            parent: data[cb.dataset.cat][cb.dataset.idx].parent, teacher: data[cb.dataset.cat][cb.dataset.idx].teacher};
+  });
+}
+
+generateBtn.addEventListener('click', () => {
+  const selections = gatherSelections();
+  const name = document.getElementById('studentName').value.trim();
+  const observer = document.getElementById('observer').value.trim();
+  if (selections.length === 0) {
+    alert('請先勾選至少一項行為。');
+    return;
+  }
+  // 標題與 meta
+  reportTitle.textContent = (name ? name + " 的行為觀察報告" : "行為觀察報告");
+  const now = new Date();
+  reportMeta.textContent = `填表人：${observer || '（未填）'}　　檢視日期：${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`;
+
+  // 列選項
+  selectedList.innerHTML = '<h3>觀察到的行為</h3>';
+  const ul = document.createElement('ul');
+  selections.forEach(s => {
+    const li = document.createElement('li');
+    li.textContent = `${s.cat} — ${s.desc}`;
+    ul.appendChild(li);
+  });
+  selectedList.appendChild(ul);
+
+  // 建議（去重、保留原順序）
+  parentAdvice.innerHTML = '';
+  teacherAdvice.innerHTML = '';
+  const parents = [];
+  const teachers = [];
+  selections.forEach(s => {
+    parents.push(s.parent);
+    teachers.push(s.teacher);
+  });
+  // 列表化
+  parentAdvice.innerHTML = parents.map(p => `<div>• ${p}</div>`).join('');
+  teacherAdvice.innerHTML = teachers.map(t => `<div>• ${t}</div>`).join('');
+
+  reportArea.style.display = 'block';
+  // 捲到報告區
+  reportArea.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+/* ----- 匯出 PDF（使用 jsPDF + html2canvas） ----- */
+const { jsPDF } = window.jspdf;
+
+document.getElementById('downloadPdfBtn').addEventListener('click', async () => {
+  if (reportArea.style.display === 'none') { alert('請先按「產生建議」產生報告再匯出。'); return; }
+  const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+  // 使用 html2canvas 擷取 reportArea
+  const element = reportArea;
+  // temporarily adjust scale for better resolution
+  const scale = 2;
+  const canvas = await html2canvas(element, { scale: scale, useCORS: true, scrollY: -window.scrollY });
+  const imgData = canvas.toDataURL('image/png');
+  // a4 size in pt: 595.28 x 841.89
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = pdf.internal.pageSize.getHeight();
+  // image size
+  const imgWidth = canvas.width;
+  const imgHeight = canvas.height;
+  const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+  const imgW = imgWidth * ratio;
+  const imgH = imgHeight * ratio;
+  pdf.addImage(imgData, 'PNG', (pdfWidth - imgW)/2, 20, imgW, imgH);
+  // 下載
+  const name = (document.getElementById('studentName').value.trim() || 'report');
+  pdf.save(`${name}_behavior_report.pdf`);
+});
+
+/* ----- 匯出 ODT（用 JSZip 建立最小 ODT 結構） ----- */
+/* ODT 基本結構：
+   - mimetype（必須是未壓縮，並且為 zip 的第一個 entry）
+   - content.xml
+   - styles.xml (最小)
+   - META-INF/manifest.xml
+*/
+function buildContentXml(title, meta, selectionsHtml, parentHtml, teacherHtml) {
+  // 用最簡單的 open document content XML
+  // 我們只包 text:p 與 basic formatting，不會包含全部 styles
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+  xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+  office:version="1.2">
+  <office:body>
+    <office:text>
+      <text:h text:style-name="Heading_20_1" text:level="1">${escapeXml(title)}</text:h>
+      <text:p>${escapeXml(meta)}</text:p>
+      <text:h text:style-name="Heading_20_2" text:level="2">觀察到的行為</text:h>
+      ${selectionsHtml}
+      <text:h text:style-name="Heading_20_2" text:level="2">家長照護建議</text:h>
+      ${parentHtml}
+      <text:h text:style-name="Heading_20_2" text:level="2">教師教學輔導建議</text:h>
+      ${teacherHtml}
+    </office:text>
+  </office:body>
+</office:document-content>`;
+}
+
+function buildManifestXml() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
+  <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+  <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
+  <manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
+</manifest:manifest>`;
+}
+
+function buildStylesXml() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-styles
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0">
+  <office:styles></office:styles>
+</office:document-styles>`;
+}
+
+// 轉換選項、建議為 ODT-compatible text:p 片段
+function selectionsToXml(selections) {
+  // 接受 selections array（物件）
+  return selections.map(s => `<text:p>• ${escapeXml(s.cat)} — ${escapeXml(s.desc)}</text:p>`).join('');
+}
+function adviceToXml(list) {
+  return list.map(a => `<text:p>• ${escapeXml(a)}</text:p>`).join('');
+}
+
+// escape xml
+function escapeXml(unsafe) {
+  if (!unsafe) return '';
+  return unsafe.replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+    }
+  });
+}
+
+document.getElementById('downloadOdtBtn').addEventListener('click', async () => {
+  if (reportArea.style.display === 'none') { alert('請先按「產生建議」產生報告再匯出。'); return; }
+  const selections = gatherSelections();
+  const name = (document.getElementById('studentName').value.trim() || 'report');
+  const now = new Date();
+  const meta = `填表人：${document.getElementById('observer').value.trim() || '（未填）'}　檢視日期：${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`;
+
+  // 準備 content.xml 的部分
+  const selXml = selectionsToXml(selections);
+  const parentList = selections.map(s => s.parent);
+  const teacherList = selections.map(s => s.teacher);
+  const parentXml = adviceToXml(parentList);
+  const teacherXml = adviceToXml(teacherList);
+
+  const contentXml = buildContentXml(name ? (name + " 的行為觀察報告") : "行為觀察報告", meta, selXml, parentXml, teacherXml);
+  const stylesXml = buildStylesXml();
+  const manifestXml = buildManifestXml();
+
+  // 使用 JSZip 建立 odt（mimetype 必須為第一個且未壓縮）
+  const zip = new JSZip();
+  // Add mimetype as stored (no compression)
+  // JSZip option {compression:'STORE'} for that file
+  zip.file('mimetype', 'application/vnd.oasis.opendocument.text', {binary:false, compression: "STORE"});
+  zip.file('content.xml', contentXml);
+  zip.file('styles.xml', stylesXml);
+  zip.folder('META-INF').file('manifest.xml', manifestXml);
+
+  const blob = await zip.generateAsync({type:'blob', mimeType: 'application/vnd.oasis.opendocument.text'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${name}_behavior_report.odt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+</script>
+</body>
+</html>
