@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>國小學生課室滿意度與心得回饋表單</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: "Noto Sans TC", Arial, sans-serif; background: #f9f9f9; padding: 40px; }
+    h1 { color: #3b82f6; }
+    form { background: #fff; border-radius: 8px; max-width: 700px; margin: 0 auto; padding: 32px; box-shadow: 0 2px 16px #0001; }
+    fieldset { border: none; margin-bottom: 28px; }
+    legend { font-weight: bold; color: #2563eb; font-size: 1.2em; margin-bottom: 12px; }
+    label { display: block; margin-bottom: 10px; font-size: 1em; }
+    textarea { width: 100%; min-height: 80px; margin-top: 8px; font-size: 1em; border: 1px solid #ddd; border-radius: 4px; }
+    .actions { margin-top: 32px; display: flex; gap: 20px; justify-content: flex-end; }
+    button { background: #2563eb; color: #fff; border: none; border-radius: 4px; padding: 12px 28px; font-size: 1em; cursor: pointer; }
+    button:disabled { background: #ccc; }
+    @media (max-width: 800px) {
+      body { padding: 10px; }
+      form { padding: 14px; }
+    }
+  </style>
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- jszip & FileSaver for ODT export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+</head>
+<body>
+  <h1>國小學生課室滿意度與心得回饋表單</h1>
+  <form id="feedbackForm">
+    <fieldset>
+      <legend>一、課室環境</legend>
+      <label>
+        <input type="checkbox" name="env" value="教室乾淨整潔，讓我感到舒適與專心。">
+        教室乾淨整潔，讓我感到舒適與專心。
+      </label>
+      <label>
+        <input type="checkbox" name="env" value="桌椅高度適合，坐久也不會不舒服。">
+        桌椅高度適合，坐久也不會不舒服。
+      </label>
+      <label>
+        <input type="checkbox" name="env" value="教室通風良好，空氣新鮮。">
+        教室通風良好，空氣新鮮。
+      </label>
+      <label>
+        <input type="checkbox" name="env" value="教室光線充足，閱讀寫字都很清楚。">
+        教室光線充足，閱讀寫字都很清楚。
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>二、師生互動</legend>
+      <label>
+        <input type="checkbox" name="interact" value="老師講解耐心，遇到不懂會再解釋。">
+        老師講解耐心，遇到不懂會再解釋。
+      </label>
+      <label>
+        <input type="checkbox" name="interact" value="老師會鼓勵我發言與提問。">
+        老師會鼓勵我發言與提問。
+      </label>
+      <label>
+        <input type="checkbox" name="interact" value="同學之間互助合作，氛圍友善。">
+        同學之間互助合作，氛圍友善。
+      </label>
+      <label>
+        <input type="checkbox" name="interact" value="老師會傾聽學生想法並給予回饋。">
+        老師會傾聽學生想法並給予回饋。
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>三、學習內容與活動</legend>
+      <label>
+        <input type="checkbox" name="content" value="課程內容有趣，讓我更想學習。">
+        課程內容有趣，讓我更想學習。
+      </label>
+      <label>
+        <input type="checkbox" name="content" value="上課有實作或遊戲活動，參與感高。">
+        上課有實作或遊戲活動，參與感高。
+      </label>
+      <label>
+        <input type="checkbox" name="content" value="作業量適中，不會覺得太多或太難。">
+        作業量適中，不會覺得太多或太難。
+      </label>
+      <label>
+        <input type="checkbox" name="content" value="我能理解大部分上課內容。">
+        我能理解大部分上課內容。
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>四、學習感受與自我表現</legend>
+      <label>
+        <input type="checkbox" name="self" value="我在課堂能專心，不容易分心。">
+        我在課堂能專心，不容易分心。
+      </label>
+      <label>
+        <input type="checkbox" name="self" value="我敢於舉手發言，勇於表達想法。">
+        我敢於舉手發言，勇於表達想法。
+      </label>
+      <label>
+        <input type="checkbox" name="self" value="我遇到困難時會主動請教老師或同學。">
+        我遇到困難時會主動請教老師或同學。
+      </label>
+      <label>
+        <input type="checkbox" name="self" value="我對自己的學習成果感到滿意。">
+        我對自己的學習成果感到滿意。
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>五、心得與建議</legend>
+      <label for="comment">請寫下您的學習心得或對老師的建議：</label>
+      <textarea id="comment" name="comment" placeholder="請輸入您的想法..."></textarea>
+    </fieldset>
+    <div class="actions">
+      <button type="button" onclick="exportPDF()">匯出 PDF</button>
+      <button type="button" onclick="exportODT()">匯出 ODT</button>
+    </div>
+  </form>
+
+  <script>
+    // 取得表單內容
+    function getFormData() {
+      const form = document.getElementById('feedbackForm');
+      const data = {
+        env: [],
+        interact: [],
+        content: [],
+        self: [],
+        comment: ''
+      };
+      form.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+        if (data[cb.name]) data[cb.name].push(cb.value);
+      });
+      data.comment = form.comment.value.trim();
+      return data;
+    }
+
+    // 匯出 PDF
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const data = getFormData();
+      let y = 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('國小學生課室滿意度與心得回饋表單', 15, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+
+      [
+        { title: '一、課室環境', key: 'env' },
+        { title: '二、師生互動', key: 'interact' },
+        { title: '三、學習內容與活動', key: 'content' },
+        { title: '四、學習感受與自我表現', key: 'self' }
+      ].forEach(section => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title, 15, y);
+        y += 7;
+        doc.setFont('helvetica', 'normal');
+        if (data[section.key].length) {
+          data[section.key].forEach(item => {
+            doc.text('- ' + item, 20, y);
+            y += 7;
+            if (y > 270) { doc.addPage(); y = 16; }
+          });
+        } else {
+          doc.text('（未勾選）', 20, y);
+          y += 7;
+        }
+      });
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('五、心得與建議', 15, y); y += 8;
+      doc.setFont('helvetica', 'normal');
+      const comment = data.comment || '（未填寫）';
+      const split = doc.splitTextToSize(comment, 175);
+      split.forEach(line => {
+        doc.text(line, 20, y);
+        y += 7;
+        if (y > 270) { doc.addPage(); y = 16; }
+      });
+
+      doc.save('課室滿意度回饋.pdf');
+    }
+
+    // 匯出 ODT
+    async function exportODT() {
+      // ODT 內容採用簡易XML
+      const data = getFormData();
+      function odtSection(title, arr) {
+        const joined = arr.length ? arr.map(i=>`<text:list text:style-name="L1"><text:list-item><text:p>${i}</text:p></text:list-item></text:list>`).join('') : '<text:p>（未勾選）</text:p>';
+        return `<text:h text:style-name="Heading_20_2">${title}</text:h>${joined}`;
+      }
+      const odtContent = `
+<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+  office:version="1.2">
+  <office:body>
+    <office:text>
+      <text:h text:style-name="Heading_20_1">國小學生課室滿意度與心得回饋表單</text:h>
+      ${odtSection('一、課室環境', data.env)}
+      ${odtSection('二、師生互動', data.interact)}
+      ${odtSection('三、學習內容與活動', data.content)}
+      ${odtSection('四、學習感受與自我表現', data.self)}
+      <text:h text:style-name="Heading_20_2">五、心得與建議</text:h>
+      <text:p>${data.comment ? data.comment.replace(/</g,'&lt;') : '（未填寫）'}</text:p>
+    </office:text>
+  </office:body>
+</office:document-content>
+      `.trim();
+
+      // ODT package
+      const zip = new JSZip();
+      zip.file('mimetype', 'application/vnd.oasis.opendocument.text');
+      zip.file('content.xml', odtContent);
+      // Minimal required files for ODT
+      zip.file('META-INF/manifest.xml', `
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
+  <manifest:file-entry manifest:media-type="application/vnd.oasis.opendocument.text" manifest:full-path="/"/>
+  <manifest:file-entry manifest:media-type="text/xml" manifest:full-path="content.xml"/>
+</manifest:manifest>
+      `.trim());
+
+      // 下載
+      zip.generateAsync({type: 'blob', compression: 'DEFLATE'})
+        .then(function(content) {
+          saveAs(content, '課室滿意度回饋.odt');
+        });
+    }
+  </script>
+</body>
+</html>
