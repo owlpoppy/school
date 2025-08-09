@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>國小學童行為觀察與建議</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; margin: 20px; }
+    h2 { color: #2c3e50; }
+    .category { margin-bottom: 20px; }
+    .suggestions { margin-top: 30px; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; }
+    button { margin-right: 10px; padding: 10px 15px; }
+  </style>
+</head>
+<body>
+  <h1>國小學童行為觀察表單</h1>
+
+  <form id="behaviorForm">
+    <!-- 類別一：情緒表現 -->
+    <div class="category">
+      <h2>情緒表現</h2>
+      <label><input type="checkbox" name="behavior" value="易怒、情緒起伏大"> 易怒、情緒起伏大</label><br>
+      <label><input type="checkbox" name="behavior" value="容易哭泣或沮喪"> 容易哭泣或沮喪</label><br>
+      <label><input type="checkbox" name="behavior" value="對批評過度敏感"> 對批評過度敏感</label><br>
+      <label><input type="checkbox" name="behavior" value="情緒低落、缺乏動力"> 情緒低落、缺乏動力</label><br>
+      <label><input type="checkbox" name="behavior" value="焦慮、擔心過多"> 焦慮、擔心過多</label><br>
+    </div>
+
+    <!-- 類別二：社交互動 -->
+    <div class="category">
+      <h2>社交互動</h2>
+      <label><input type="checkbox" name="behavior" value="不願與同儕互動"> 不願與同儕互動</label><br>
+      <label><input type="checkbox" name="behavior" value="容易與人衝突"> 容易與人衝突</label><br>
+      <label><input type="checkbox" name="behavior" value="缺乏合作能力"> 缺乏合作能力</label><br>
+      <label><input type="checkbox" name="behavior" value="過度依賴老師"> 過度依賴老師</label><br>
+      <label><input type="checkbox" name="behavior" value="無法理解社交暗示"> 無法理解社交暗示</label><br>
+    </div>
+
+    <!-- 類別三：學習行為 -->
+    <div class="category">
+      <h2>學習行為</h2>
+      <label><input type="checkbox" name="behavior" value="注意力不集中"> 注意力不集中</label><br>
+      <label><input type="checkbox" name="behavior" value="作業常遺漏或未完成"> 作業常遺漏或未完成</label><br>
+      <label><input type="checkbox" name="behavior" value="學習動機低落"> 學習動機低落</label><br>
+      <label><input type="checkbox" name="behavior" value="無法遵守課堂規則"> 無法遵守課堂規則</label><br>
+      <label><input type="checkbox" name="behavior" value="對新知抗拒"> 對新知抗拒</label><br>
+    </div>
+
+    <!-- 類別四：自我管理 -->
+    <div class="category">
+      <h2>自我管理</h2>
+      <label><input type="checkbox" name="behavior" value="無法控制衝動"> 無法控制衝動</label><br>
+      <label><input type="checkbox" name="behavior" value="缺乏時間觀念"> 缺乏時間觀念</label><br>
+      <label><input type="checkbox" name="behavior" value="常忘記攜帶物品"> 常忘記攜帶物品</label><br>
+      <label><input type="checkbox" name="behavior" value="無法完成指派任務"> 無法完成指派任務</label><br>
+      <label><input type="checkbox" name="behavior" value="缺乏目標設定能力"> 缺乏目標設定能力</label><br>
+    </div>
+
+    <!-- 類別五：身體動作 -->
+    <div class="category">
+      <h2>身體動作</h2>
+      <label><input type="checkbox" name="behavior" value="過度活動、坐不住"> 過度活動、坐不住</label><br>
+      <label><input type="checkbox" name="behavior" value="動作協調不佳"> 動作協調不佳</label><br>
+      <label><input type="checkbox" name="behavior" value="常有刻板動作"> 常有刻板動作</label><br>
+      <label><input type="checkbox" name="behavior" value="容易疲倦或無力"> 容易疲倦或無力</label><br>
+      <label><input type="checkbox" name="behavior" value="姿勢不良"> 姿勢不良</label><br>
+    </div>
+
+    <!-- 類別六：語言表達 -->
+    <div class="category">
+      <h2>語言表達</h2>
+      <label><input type="checkbox" name="behavior" value="語言表達能力弱"> 語言表達能力弱</label><br>
+      <label><input type="checkbox" name="behavior" value="說話不清楚或口齒不清"> 說話不清楚或口齒不清</label><br>
+      <label><input type="checkbox" name="behavior" value="無法組織語句"> 無法組織語句</label><br>
+      <label><input type="checkbox" name="behavior" value="不願主動表達"> 不願主動表達</label><br>
+      <label><input type="checkbox" name="behavior" value="語言使用不當"> 語言使用不當</label><br>
+    </div>
+
+    <button type="button" onclick="generateSuggestions()">產生建議</button>
+    <button type="button" onclick="exportPDF()">匯出 PDF</button>
+    <button type="button" onclick="exportODT()">匯出 ODT</button>
+  </form>
+
+  <div id="suggestions" class="suggestions"></div>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html-docx-js -->
+  <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+
+  <script>
+    function generateSuggestions() {
+      const checked = Array.from(document.querySelectorAll('input[name="behavior"]:checked')).map(el => el.value);
+      let parentAdvice = "<h3>家長照護建議</h3><ul>";
+      let teacherAdvice = "<h3>教師輔導建議</h3><ul>";
+
+      checked.forEach(item => {
+        parentAdvice += `<li>針對「${item}」，建議家長提供穩定情緒的環境，並與孩子多溝通。</li>`;
+        teacherAdvice += `<li>針對「${item}」，教師可採用差異化教學策略，並適時給予正向回饋。</li>`;
+      });
+
+      parentAdvice += "</ul>";
+      teacherAdvice += "</ul>";
+
+      document.getElementById("suggestions").innerHTML = parentAdvice + teacherAdvice;
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
