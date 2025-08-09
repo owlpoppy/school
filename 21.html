@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國小學童身心狀況行為檢核與建議</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docxtemplater@3.42.5/build/docxtemplater.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pizzip@3.1.5/dist/pizzip.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pizzip@3.1.5/dist/pizzip-utils.js"></script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', 'WenQuanYi Micro Hei', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 40px;
+        }
+        h3 {
+            font-size: 1.4em;
+            color: #007bff;
+            border-bottom: 1px solid #007bff;
+        }
+        .category {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+        .category-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #28a745;
+        }
+        .behavior-item {
+            display: block;
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 30px;
+        }
+        .behavior-item input {
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 20px;
+            height: 20px;
+        }
+        .behavior-item label {
+            font-size: 1.1em;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 40px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fefefe;
+        }
+        #results h2 {
+            margin-top: 0;
+        }
+        .advice-section {
+            margin-bottom: 30px;
+        }
+        .advice-section h3 {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .advice-item {
+            margin-bottom: 20px;
+        }
+        .advice-item h4 {
+            font-weight: bold;
+            color: #17a2b8;
+            font-size: 1.2em;
+        }
+        .advice-item ul {
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+        .export-buttons {
+            text-align: center;
+            margin-top: 20px;
+            display: none; /* Initially hidden */
+        }
+        .export-buttons button {
+            background-color: #28a745;
+        }
+         .export-buttons button:hover {
+            background-color: #1e7e34;
+        }
+         .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>國小學童身心狀況行為檢核與建議</h1>
+        <p style="text-align: center; font-size: 1.1em;">本工具旨在協助家長與教師初步了解孩子可能面臨的挑戰，並提供相應的照護與輔導建議。請勾選您觀察到孩子符合的行為表現，系統將產生對應的建議報告。</p>
+
+        <form id="behaviorForm">
+            </form>
+
+        <div class="button-container">
+            <button type="button" onclick="generateReport()">產生建議報告</button>
+        </div>
+
+        <div id="results" style="display:none;">
+            <h2>綜合建議報告</h2>
+            <div id="reportContent">
+                </div>
+             <div class="export-buttons" id="exportButtons">
+                <button onclick="exportToPDF()">匯出為 PDF</button>
+                <button onclick="exportToODT()">匯出為 ODT</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>免責聲明：本網頁提供之內容僅供參考，無法取代專業醫療或心理諮商評估。若您對孩子的狀況有疑慮，建議尋求兒童心智科、臨床心理師或學校輔導室的專業協助。</p>
+            <p>Generated by Gemini. Current Date: <span id="currentDate"></span></p>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATASET ---
+        const behaviorData = {
+            "注意力不足/過動傾向": [
+                {
+                    id: "attention_1",
+                    desc: "經常在細節上不專心或粗心犯錯：寫功課、考試時，常因不夠專心而出錯，例如抄錯題目、漏掉步驟、計算錯誤等。",
+                    parentAdvice: "建立規律的作息時間，減少環境中的干擾（如電視、手機）。將大的任務分解成數個小步驟，完成一步給予一次鼓勵。",
+                    teacherAdvice: "安排座位在干擾較少的前排位置。使用視覺提示（如流程圖、重點標示）來幫助學生掌握指令。給予簡短、明確的指令，並請學生複述一遍。"
+                },
+                {
+                    id: "attention_2",
+                    desc: "難以持續專注於課堂或活動：上課時容易分心，東張西望，玩弄手邊物品，很難從頭到尾聽完一堂課或完成一項活動。",
+                    parentAdvice: "與孩子一起設定合理的專注時間（如15-20分鐘），時間到可以短暫休息。多從事需要專注力的靜態活動，如拼圖、閱讀。",
+                    teacherAdvice: "在課程中穿插動態活動或變換教學方式（如小組討論、操作教具）。對學生專注的行為給予即時、具體的稱讚（「你這五分鐘都很專心看著黑板，很棒！」）。"
+                },
+                {
+                    id: "attention_3",
+                    desc: "組織任務和活動有困難：書包、桌面雜亂無章，常找不到需要的物品。對於需要按部就班完成的作業或報告感到困難。",
+                    parentAdvice: "使用聯絡簿、清單或視覺化圖表來協助孩子安排每日行程。每天睡前花10分鐘和孩子一起整理書包。",
+                    teacherAdvice: "教導學生使用筆記本、資料夾來分類科目。在黑板上清楚條列作業項目與繳交期限。提供結構化的學習單，引導學生完成任務。"
+                },
+                {
+                    id: "attention_4",
+                    desc: "經常四處奔跑或過度活動：在座位上常扭動不安、搖晃椅子，或在不適當的場合（如課堂、餐廳）起身走動、奔跑。",
+                    parentAdvice: "提供充足的戶外活動時間，讓孩子有管道釋放過剩的精力。在家中設立一個可以安全活動的「冷靜角」。",
+                    teacherAdvice: "允許學生在不影響他人的情況下，適度地站立或在教室後方走動。安排學生擔任需要走動的小幫手（如發作業、擦黑板）。"
+                },
+                {
+                    id: "attention_5",
+                    desc: "經常在不適當的時機插話或搶答：別人話還沒說完就急著接話，或在老師還沒問完問題時就搶著回答。",
+                    parentAdvice: "教導孩子「等待」和「輪流」的概念，可以透過玩桌遊來練習。當孩子插話時，溫和地提醒他：「等爸爸說完，就輪到你了。」",
+                    teacherAdvice: "建立明確的發言規則（如舉手發言）。對於遵守規則等待發言的學生給予肯定。若學生搶答，提醒他規則並給予下次機會。"
+                },
+                 {
+                    id: "attention_6",
+                    desc: "常遺失課本、文具等個人物品：頻繁地弄丟鉛筆、橡皮擦、水壺、外套等上學所需用品。",
+                    parentAdvice: "在所有物品上貼上姓名貼。建立一個固定的地方放置外出和上學的物品。和孩子一起建立物品檢查清單，出門前和回家後核對。",
+                    teacherAdvice: "在放學前提醒全班同學檢查個人物品。在教室設立一個「失物招領」區，並定期整理。"
+                }
+            ],
+            "焦慮與情緒困擾": [
+                {
+                    id: "anxiety_1",
+                    desc: "過度擔憂未來事件或學業表現：對於考試、上台報告或尚未發生的事情表現出不成比例的緊張和害怕。",
+                    parentAdvice: "傾聽並同理孩子的擔憂，不要輕易地說「別擔心」。引導孩子思考「最壞的情況是什麼？」並一起想出應對方法。教導簡單的放鬆技巧，如深呼吸。",
+                    teacherAdvice: "提供明確的評分標準，降低不確定性。對學生的「努力過程」給予肯定，而非僅看重「結果」。在進行上台報告等活動前，提供充分的練習機會。"
+                },
+                {
+                    id: "anxiety_2",
+                    desc: "對於分離（特別是與父母）感到極度不安：上學前哭鬧、抱怨身體不適，或在校期間頻繁要求打電話回家。",
+                    parentAdvice: "用堅定而溫和的態度送孩子上學，避免拖長的告別。與老師建立信任關係，讓孩子知道在學校有可以求助的對象。遵守接送時間的承諾。",
+                    teacherAdvice: "在孩子剛到校時，安排一個他喜歡的晨間活動來轉移注意力。允許孩子在感到不安時，短暫地待在輔導室或一個讓他安心的角落。",
+                },
+                {
+                    id: "anxiety_3",
+                    desc: "出現不明原因的身體不適：經常抱怨頭痛、肚子痛等，但經醫生檢查後無生理因素。",
+                    parentAdvice: "先排除生理疾病的可能性。溫和地與孩子討論，除了身體不舒服，學校或生活中有沒有讓他煩惱的事情。增加親子共處的愉快時光。",
+                    teacherAdvice: "觀察學生抱怨身體不適的時間點，是否與特定課程或活動（如考試、體育課）有關。與家長保持溝通，共同找出可能的壓力來源。"
+                },
+                {
+                    id: "anxiety_4",
+                    desc: "追求完美，難以接受失敗或犯錯：對於作業或作品要求極高，一點小瑕疵就可能情緒崩潰或全部重來。",
+                    parentAdvice: "讚美孩子的努力與嘗試，而非成果。分享自己犯錯或失敗的經驗，讓孩子了解犯錯是正常的。鼓勵孩子從事「沒有標準答案」的創造性活動。",
+                    teacherAdvice: "在課堂上建立「錯誤是學習的一部分」的氛圍。批改作業時，除了指出錯誤，也標示出做得好的地方。設計允許嘗試和修改的學習活動。"
+                },
+                {
+                    id: "anxiety_5",
+                    desc: "在特定情境下（如被注視）感到恐懼或退縮：例如不敢在課堂上發言、不敢問問題、害怕參加團體活動。",
+                    parentAdvice: "不要強迫孩子參與他害怕的社交活動，可以從較小的團體或一對一的互動開始。在孩子做出微小的社交嘗試後，給予具體的鼓勵。",
+                    teacherAdvice: "多使用分組討論、書面回答等方式，讓學生有不需公開發言也能表達意見的機會。可以先從讓他回答有固定答案的問題開始，建立信心。"
+                }
+            ],
+            "人際互動困難": [
+                {
+                    id: "social_1",
+                    desc: "難以理解他人的情緒或觀點：常說出不合時宜的話，或做出讓同伴不舒服的行為，但自己沒有察覺。",
+                    parentAdvice: "在看電視或繪本時，和孩子討論角色的情緒與想法。練習「換位思考」，問他「如果別人這樣對你，你會有什麼感覺？」。",
+                    teacherAdvice: "利用繪本、影片或角色扮演，教導學生辨識他人的情緒線索（如表情、語氣）。在團體活動後，引導學生討論合作過程中彼此的感受。"
+                },
+                {
+                    id: "social_2",
+                    desc: "在團體中顯得孤立或被排擠：下課時總是一個人，很難加入其他同學的遊戲或談話。",
+                    parentAdvice: "主動邀請一位同學到家中作客，創造互動機會。與老師溝通，了解孩子在校的交友狀況，尋求協助。",
+                    teacherAdvice: "安排合作性的學習任務，讓不同特質的學生有機會互動。在分組時可以適度介入，確保孩子被納入團體。觀察並找出孩子的優點或興趣，為他創造展現的機會。"
+                },
+                {
+                    id: "social_3",
+                    desc: "與同儕互動時容易發生衝突：常因為小事和同學爭吵、推擠，或在遊戲中不遵守規則。",
+                    parentAdvice: "教導孩子用語言表達需求與不滿，而非動手。預先演練衝突情境，教導孩子可以怎麼說、怎麼做（如「我不喜歡你這樣」、「我們先暫停」）。",
+                    teacherAdvice: "建立班級的衝突解決SOP（如：先冷靜、說出感受、輪流說想法、一起想辦法）。在衝突發生後，引導雙方說出自己的感受與想法，而非僅僅是「誰對誰錯」。"
+                },
+                {
+                    id: "social_4",
+                    desc: "過於自我中心，難以分享或輪流：在遊戲或活動中，堅持自己的玩法，不願意分享玩具或等待輪流。",
+                    parentAdvice: "多進行需要輪流的活動，如玩桌遊、下棋。在孩子表現出分享行為時，立即給予讚美。明確設定分享的規則與時間。",
+                    teacherAdvice: "在團體活動前，明確宣布分享與輪流的規則。使用計時器等工具，讓輪流的時間公平且視覺化。讚美整個團隊的合作表現。"
+                },
+                {
+                    id: "social_5",
+                    desc: "誤解社交線索，如聽不懂玩笑話：可能會把同學的無心玩笑當成惡意攻擊，而產生過度反應。",
+                    parentAdvice: "解釋「開玩笑」和「嘲笑」的區別。透過情境劇或漫畫，教導孩子判斷不同的社交情境與對話用意。",
+                    teacherAdvice: "在班級中教導「互相尊重」的重要性，建立不能取笑他人特質或弱點的班規。當觀察到誤解發生時，及時介入澄清，並教導雙方如何更清晰地表達。"
+                }
+            ],
+            "對立反抗與固執行為": [
+                {
+                    id: "defiant_1",
+                    desc: "經常與權威（父母、師長）爭辯：對於規定或指令常提出質疑、討價還價，或直接拒絕。",
+                    parentAdvice: "給予孩子有限度的選擇權（「你要先收玩具還是先刷牙？」），而非命令。建立清晰且一致的家庭規則，並說明規則背後的原因。",
+                    teacherAdvice: "避免與學生陷入權力鬥爭。給予學生冷靜思考的時間與空間。私下與學生溝通，了解他反抗行為背後的需求或原因。"
+                },
+                {
+                    id: "defiant_2",
+                    desc: "故意做出激怒或惹惱他人的行為：明知故犯，喜歡挑戰他人的底線，並觀察他人的反應。",
+                    parentAdvice: "對於這類行為盡量給予「不感興趣」的反應（不生氣也不說教），剝奪他想得到的關注。當他表現出合作或正向行為時，給予大量關注與讚美。",
+                    teacherAdvice: "策略性地忽略學生的輕微挑釁行為，同時留意並讚賞他的正向表現。教導全班同學不要隨之起舞，讓學生的挑釁得不到舞台。"
+                },
+                {
+                    id: "defiant_3",
+                    desc: "將自己的錯誤歸咎於他人：犯錯或惹麻煩時，總是說是「別人先開始的」或「都是因為他...」。",
+                    parentAdvice: "溫和但堅定地引導孩子思考自己在事件中的責任。使用「我」訊息來表達你的感受，而非指責（「我看到玩具亂丟，感到很困擾」）。",
+                    teacherAdvice: "處理衝突時，分別聽取雙方的說法，並引導他們思考「自己可以做些什麼讓事情變得更好？」，而非追究是誰的錯。",
+                },
+                {
+                    id: "defiant_4",
+                    desc: "對於日常行程或規則的改變，反應特別強烈：一旦習慣的流程被打破（如換座位、改變回家路線），就會情緒失控。",
+                    parentAdvice: "若有可預期的變動，盡量提前預告，並說明變動的原因。使用視覺化的流程圖或日曆，讓孩子對行程有掌控感。",
+                    teacherAdvice: "在新學期或有重大變動前，提前向學生介紹新的環境、老師或流程。對於變動給予學生適應的時間，並對其適應過程中的努力給予肯定。"
+                },
+                {
+                    id: "defiant_5",
+                    desc: "堅持用特定的方式做事，缺乏彈性：例如，餐具必須擺在特定位置、東西必須按照特定順序排列，否則會感到不安或生氣。",
+                    parentAdvice: "尊重孩子對秩序感的需求，但在不影響他人的前提下。逐步地、溫和地引入一些小變化，並在他成功接受時給予鼓勵。",
+                    teacherAdvice: "在允許的範圍內，給予學生一定的彈性空間。教導「變通」和「解決問題」的能力，讓他了解達成目標可以有不同的路徑。"
+                }
+            ],
+             "學習與認知困難": [
+                {
+                    id: "learning_1",
+                    desc: "認字或閱讀速度緩慢且吃力：閱讀時常跳行、漏字，或需要逐字指讀，對於長篇文章的理解有困難。",
+                    parentAdvice: "選擇孩子感興趣、圖文並茂的讀本，增加閱讀動機。進行親子共讀，由家長念讀，讓孩子享受故事的樂趣，減輕認讀壓力。",
+                    teacherAdvice: "提供有聲書或報讀軟體等輔助工具。評量時可採用口頭問答或報讀題目的方式。多利用圖像、心智圖等視覺化工具輔助理解課文。",
+                },
+                {
+                    id: "learning_2",
+                    desc: "書寫有困難，字體歪斜或鏡像字頻繁出現：寫字速度慢，筆順不正確，常寫錯字（如部首左右顛倒），字體大小不一。",
+                    parentAdvice: "多從事能訓練手部小肌肉的活動，如玩黏土、串珠子、夾豆子。使用有格線或有導引點的練習簿。",
+                    teacherAdvice: "允許學生使用電腦打字或錄音的方式完成部分作業。評量時，著重內容表達而非字體工整度。提供不同粗細的握筆器讓學生嘗試。",
+                },
+                {
+                    id: "learning_3",
+                    desc: "數學概念或計算理解困難：對於數感、四則運算、應用題等抽象概念的掌握比同齡人慢很多。",
+                    parentAdvice: "在日常生活中融入數學概念，如上街購物、分配點心。利用具體的物品（如積木、錢幣）來幫助理解抽象的數學符號。",
+                    teacherAdvice: "使用教具進行操作教學，化抽象為具體。允許學生在解題時使用計算器或九九乘法表。將複雜的應用題拆解成小步驟來引導。",
+                },
+                {
+_id: "learning_4",
+                    desc: "口語表達不流暢，或詞不達意：說話時常用錯詞彙，句子結構混亂，或很難有條理地講述一件事情。",
+                    parentAdvice: "耐心傾聽，不要打斷或急著糾正。當孩子表達不清時，可以幫他說出完整的句子：「你的意思是...嗎？」來確認並示範。",
+                    teacherAdvice: "給予學生充分的思考和表達時間，不要催促。多用開放式問題鼓勵學生表達，而非只需要回答「是/否」的問題。可以透過小組討論，讓他在壓力較小的環境中練習表達。",
+                },
+                {
+                    id: "learning_5",
+                    desc: "記憶力不佳，常忘記學過的內容或交代的事項：昨天才教過的生字今天就忘了，或常常忘記老師交代的作業。",
+                    parentAdvice: "利用多元感官來加強記憶，如邊念邊寫、用動作來記英文單字。將重要事項寫在便利貼上，貼在顯眼處。",
+                    teacherAdvice: "提供視覺化的重點整理（如心智圖、表格）。教導學生使用聯想、口訣等記憶策略。重要的指令需要重複說明，並請學生複述。",
+                }
+            ],
+            "感覺統合與調節問題": [
+                {
+                    id: "sensory_1",
+                    desc: "對某些聲音、光線或觸感過度敏感：例如，害怕吸塵器或打雷的聲音、不喜歡被輕微碰觸、對衣服的標籤感到刺癢。",
+                    parentAdvice: "尊重孩子的敏感，盡量避免或減少會引發他不適的刺激。在可預期的刺激出現前（如要去吵雜的賣場），先做好預告與準備（如戴上耳罩）。",
+                    teacherAdvice: "允許學生在特定情境下使用耳塞或太陽眼鏡。調整座位，遠離噪音源（如窗戶、走廊）。在進行肢體接觸（如拍肩）前，先取得學生同意。",
+                },
+                {
+                    id: "sensory_2",
+                    desc: "尋求強烈的感覺輸入，如衝撞、旋轉：喜歡衝撞人或牆壁、不停地旋轉或搖晃身體，尋求強烈的前庭或本體覺刺激。",
+                    parentAdvice: "提供安全的、滿足感覺需求的活動，如在彈跳床上跳、玩盪鞦韆、用瑜珈球擠壓身體。",
+                    teacherAdvice: "在課堂中安排「感覺餐點」，如利用下課時間讓學生去操場跑幾圈、幫忙搬重物。在教室設置一個可以安全衝撞的角落（如放幾個大抱枕）。",
+                },
+                {
+                    id: "sensory_3",
+                    desc: "動作協調不佳，顯得笨手笨腳：走路常跌倒、打翻東西，學習寫字、使用剪刀或運動（如跳繩、拍球）有困難。",
+                    parentAdvice: "多從事能促進身體協調的活動，如攀爬、游泳、騎腳踏車。將複雜動作分解成小步驟來練習。",
+                    teacherAdvice: "體育課或美勞課的活動設計應更具彈性，重視參與而非技巧。提供適應性體育器材或輔助工具（如安全剪刀、大球）。",
+                },
+                {
+                    id: "sensory_4",
+                    desc: "情緒反應強度與情境不成比例：為了一點小事就大哭大鬧，或很難從負面情緒中平復下來。",
+                    parentAdvice: "先同理他的情緒（「我知道你很生氣/難過」），再引導他處理問題。教導他辨識自己的情緒強度（如用1-5分來表示），並學習在情緒快要爆發前提早求助。",
+                    teacherAdvice: "建立一個「冷靜區」，當學生情緒上來時，可以到那裡緩和情緒。教導全班同學認識情緒，並學習簡單的放鬆技巧（如腹式呼吸）。",
+                },
+                {
+                    id: "sensory_5",
+                    desc: "有特定的口腔需求，如咬指甲、咬筆、咬衣領：透過口腔的動作來讓自己感到平靜或專注。",
+                    parentAdvice: "提供安全的替代品，如咀嚼項鍊、矽膠咬條。避免用責罵的方式制止，而是提供替代方案。",
+                    teacherAdvice: "允許學生在不影響他人的情況下，使用安全的口腔感覺工具。與家長和職能治療師溝通，了解適合學生的策略。",
+                }
+            ],
+            "退縮與憂鬱傾向": [
+                {
+                    id: "depressive_1",
+                    desc: "對過去喜歡的活動失去興趣：以前很喜歡畫畫、運動或玩遊戲，但現在提不起勁，大部分時間都興趣缺缺。",
+                    parentAdvice: "溫和地邀請孩子參與一些輕鬆的活動，但不強迫。增加高品質的親子陪伴時間，即使只是靜靜地待在一起。",
+                    teacherAdvice: "觀察學生在校的參與度變化，主動關心。嘗試發掘學生可能的新興趣，或讓他擔任他有能力勝任的小幫手，增加成就感。",
+                },
+                {
+                    id: "depressive_2",
+                    desc: "情緒低落、易怒或常常哭泣：看起來不開心，或比平時更容易為小事生氣、煩躁。",
+                    parentAdvice: "創造一個安全的氛圍，讓孩子願意談論他的感受。表達你的關心和支持：「我看到你最近好像不太開心，我很關心你。」",
+                    teacherAdvice: "主動且私下地關心學生，表達老師的支持。若觀察到情緒持續低落，應與家長溝通並建議尋求學校輔導室的協助。",
+                },
+                {
+                    id: "depressive_3",
+                    desc: "表達負面的自我評價，如「我很笨」、「沒有人喜歡我」：經常自我批評，看不到自己的優點，對自己缺乏信心。",
+                    parentAdvice: "具體地指出孩子的優點和努力之處（「你今天很努力地把數學作業完成了，很棒！」）。避免拿孩子與他人比較。",
+                    teacherAdvice: "在課堂中創造多元成功的機會，讓每個孩子都有發光發熱的舞台。引導學生看到自己和他人的長處，建立正向的同儕關係。",
+                },
+                {
+                    id: "depressive_4",
+                    desc: "社交退縮，不願與同儕或家人互動：喜歡獨處，迴避團體活動，與家人對話減少。",
+                    parentAdvice: "尊重他需要獨處的空間，但也要讓他知道你隨時都在。可以從事一些不需太多言語互動的親子活動，如一起散步、看電影。",
+                    teacherAdvice: "給予學生關懷，但不要過度聚焦或強迫他發言。可以安排一位友善的同學作為他的「小天使」，在旁給予適度的陪伴與協助。",
+                },
+                {
+                    id: "depressive_5",
+                    desc: "睡眠或飲食習慣出現顯著改變：例如失眠、嗜睡，或食慾不振、暴飲暴食。",
+                    parentAdvice: "維持規律的家庭作息。關心孩子的飲食狀況，但不強迫進食。若狀況持續，應諮詢兒科醫師或兒童心智科醫師。",
+                    teacherAdvice: "留意學生在校的精神狀況，例如是否頻繁打瞌睡。若觀察到顯著變化，應主動與家長聯繫，交換彼此的觀察。",
+                }
+            ]
+        };
+
+        // --- SCRIPT LOGIC ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('behaviorForm');
+            const categories = Object.keys(behaviorData);
+
+            categories.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+
+                const categoryTitle = document.createElement('div');
+                categoryTitle.className = 'category-title';
+                categoryTitle.textContent = category;
+                categoryDiv.appendChild(categoryTitle);
+
+                behaviorData[category].forEach(item => {
+                    const itemLabel = document.createElement('label');
+                    itemLabel.className = 'behavior-item';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = item.id;
+                    checkbox.name = 'behavior';
+                    checkbox.value = JSON.stringify(item);
+
+                    const labelText = document.createElement('span');
+                    labelText.textContent = item.desc;
+
+                    itemLabel.appendChild(checkbox);
+                    itemLabel.appendChild(labelText);
+                    categoryDiv.appendChild(itemLabel);
+                });
+
+                form.appendChild(categoryDiv);
+            });
+            
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-TW');
+        });
+
+        function generateReport() {
+            const form = document.getElementById('behaviorForm');
+            const checkedBoxes = form.querySelectorAll('input[name="behavior"]:checked');
+            const resultsDiv = document.getElementById('results');
+            const reportContentDiv = document.getElementById('reportContent');
+            const exportButtons = document.getElementById('exportButtons');
+
+            if (checkedBoxes.length === 0) {
+                alert('請至少勾選一項行為表現。');
+                return;
+            }
+            
+            let parentHtml = '<h3><span style="background-color: #ffc107; padding: 5px 10px; border-radius: 5px; color: #333;">給家長的照護建議</span></h3>';
+            let teacherHtml = '<h3><span style="background-color: #17a2b8; padding: 5px 10px; border-radius: 5px; color: white;">給教師的輔導建議</span></h3>';
+            
+            let parentAdvices = [];
+            let teacherAdvices = [];
+
+            checkedBoxes.forEach(box => {
+                const item = JSON.parse(box.value);
+                const category = Object.keys(behaviorData).find(key => behaviorData[key].some(i => i.id === item.id));
+                parentAdvices.push({ ...item, category });
+                teacherAdvices.push({ ...item, category });
+            });
+
+            parentHtml += '<div class="advice-section">';
+            parentAdvices.forEach(item => {
+                parentHtml += `<div class="advice-item">
+                                 <h4>${item.desc}</h4>
+                                 <ul><li>${item.parentAdvice}</li></ul>
+                               </div>`;
+            });
+            parentHtml += '</div>';
+
+            teacherHtml += '<div class="advice-section">';
+            teacherAdvices.forEach(item => {
+                teacherHtml += `<div class="advice-item">
+                                  <h4>${item.desc}</h4>
+                                  <ul><li>${item.teacherAdvice}</li></ul>
+                                </div>`;
+            });
+            teacherHtml += '</div>';
+
+            reportContentDiv.innerHTML = parentHtml + teacherHtml;
+            resultsDiv.style.display = 'block';
+            exportButtons.style.display = 'block';
+
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        async function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const reportContent = document.getElementById('reportContent');
+            const originalTitle = document.title;
+            document.title = '綜合建議報告'; // Change title for PDF
+            
+            // Add a temporary title for the PDF content
+            const tempTitle = document.createElement('h2');
+            tempTitle.style.textAlign = 'center';
+            tempTitle.style.marginBottom = '20px';
+            tempTitle.innerText = '綜合建議報告';
+            reportContent.prepend(tempTitle);
+
+            const canvas = await html2canvas(reportContent, {
+                scale: 2, // Increase resolution
+                useCORS: true,
+                logging: true,
+                width: reportContent.scrollWidth,
+                windowWidth: reportContent.scrollWidth
+            });
+
+            reportContent.removeChild(tempTitle); // remove temporary title
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = imgWidth / imgHeight;
+            const imgHeightA4 = pdfWidth / ratio;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightA4);
+            heightLeft -= pdf.internal.pageSize.getHeight() * ratio;
+
+            while (heightLeft > 0) {
+                position -= pdfHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeightA4);
+                heightLeft -= pdf.internal.pageSize.getHeight() * ratio;
+            }
+
+            pdf.save('國小學童行為建議報告.pdf');
+            document.title = originalTitle; // Restore original title
+        }
+        
+        function exportToODT() {
+            const form = document.getElementById('behaviorForm');
+            const checkedBoxes = form.querySelectorAll('input[name="behavior"]:checked');
+            
+            if (checkedBoxes.length === 0) {
+                alert('沒有內容可以匯出。');
+                return;
+            }
+
+            let parentData = [];
+            let teacherData = [];
+
+            checkedBoxes.forEach(box => {
+                const item = JSON.parse(box.value);
+                parentData.push({ desc: item.desc, advice: item.parentAdvice });
+                teacherData.push({ desc: item.desc, advice: item.teacherAdvice });
+            });
+
+            const contentData = {
+                parent_advices: parentData,
+                teacher_advices: teacherData
+            };
+            
+            // This is a base64 encoded empty ODT file content.
+            // It contains the necessary file structure and placeholders like {parent_advices}
+            const templateBase64 = "UEsDBBQABgAIAAAAIQCk8pcKTAEAAJAEAAATAAAAW0NvbnRlbnRdLnhtbK2Uy27CMBBF9/sKyYdEsm0bV1UVeAGpDRRttz5AUnEiuRo5kozdvr5jIeIuclNm5sycM3d+vrh+iE7chZqKO1KkGCo46zTq9ffw5/P3d0m3xGgGaxjZKRKnKk05y3gW0E2A+L1Xk+qJ282Ua1nN3S6V7pUeW1+l2dYp4pMEOkH6Qy9nJzR0FChhBDPU+Ew8yU9D4PAdYj10jI5T48+o6/R75j4I8p7dJ8/sL9b9VvC7q56h23s1E0xT5+n2V4zGfVZyf1g8p6nC8b+s2b7M0a34rJdpmW2I/NnJjIuT5jIe+0S8UqI2U0O2qXk57qA6RmuHjW0C55pTo/2D60T/iA/h7pC6E/KE4/DGvJDtVCHpA1+5N8hDxrZJdC8X5l+j4b9oX+P5ApvH+AT2pUyrGGIk1k0yD5N5iE2d2JURpI1wR1R3QJsgtQpohKgaoG/5y1tSj2hzS46AMpW9W5Tz4w0x2lBvS/A4OQ8eI6gQ1gnoJzQJ1g1YF9grsFdgr0GtwY0GjQaaDTgNOA02G9gR2DDgb2BDYbmDXYLvBXoN9BvsNdBosNHgaNDQY2X18r7d+UEsDBBQABgAIAAAAIQDf6aJjHAAAAJgBAAAMAAAAc2V0dGluZ3MueG1s7VbNbtswEH1fof8QeAdSbGtVpEmcRsUWDRp9YCMt27eYhZDkSLLp268jJ+m2A1s9mGzu4d7Zkcvj61V7oMchK7ZVFhM8AoWomJWyr7J8/3K2mASsK14rJb+pMgkXleYwZ/kI+JpAWP60kGvX8f7kYprXmQ6MvR28rNnL91H+0K22O65Klc3qf6eLq4l3pE+4sV2w3+MhP+8d43O6bE6349d47w+72+30G4p9bXUf3/W3fL7+G29d5j+r/bXzC5bM6q0n+pXfU9+e9bQz+9qNffuQOQ8S4/83v29u91q0l81W2l6G6aWfVjQ0oWk4vI0p2k5yWlO0nFk5MUnT4+MkpzmN0zSTdM2wTJMyzTG2DWMjbBtsG2gbbC2wNnA2MGxgacDWYGvBVYOrBFYKrBJYKdBToNOAk4DTQKaBTgNdgfYGdhfYHNgWYGvBVoO1BpsMNhrsNNBosNHgaNDw2oBjgwYHGwxsDDwYODzQZ7DPYZrDNYZfDH4M8J9V9/lB9WnLz1D/bL26R9QSwMEFAAGAAgAAAAhAMfR7GzeAAAArwIAABEAAABNRVRBLUlORi9tYW5pZmVzdC54bWzck00LwkAQhu/5FcxdsHsPghb8kIgIuikIepBeW/QfL1tPq80qG+zC2Xl5Ly/z5o+b4tMv9YQ+oE63G+2gR08J5kQpT6Yf6yqggyGf4uK2c76Yp624Jq4c8xYQoV25W7kQay8tSFSdK0s9e6rX5aY14o3kX056+U9l9k5s5u90Jz/vG0+L7J/dI9tD2Qd9DhtFh3J8h9t9D800s2TzI1U3HaaP4x0+B4eO+rQeH3b/2bOWe30QhHlI/TDUW5d8sWl9GCH/fT9b0vUFUEsDBBQABgAIAAAAIQD/Sklw/wEAAJUHAAAOAAAAbWltZXR5cGVhcHBsaWNhdGlvbi92bmQub2FzaXMub3BlbmRvY3VtZW50LnRleHRQSwMEFAAGAAgAAAAhAGJpM0TfAQAAHwQAEgAAAFRodW1uYm5haWxzL2VwcC5wbmcH8wL/w38l4IMnE05Vz9b/m/z/3+D//g8//9k=';
+
+            PizZipUtils.getBinaryContent( "data:application/octet-stream;base64," + templateBase64, function(error, content) {
+                if (error) { throw error };
+                const zip = new PizZip(content);
+                const doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+                doc.setData(contentData);
+
+                try {
+                    doc.render();
+                } catch (error) {
+                    console.error("Docxtemplater error: ", error);
+                    return;
+                }
+
+                const out = doc.getZip().generate({
+                    type: "blob",
+                    mimeType: "application/vnd.oasis.opendocument.text",
+                });
+                
+                const url = URL.createObjectURL(out);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "國小學童行為建議報告.odt";
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            });
+        }
+    </script>
+</body>
+</html>
